@@ -117,6 +117,7 @@
   /* Projector view: ?wall */
   .qr { display: none; }
   body.wall .form-card { display: none; }
+  body:not(.wall) .wall-card, body:not(.wall) .robot-card { display: none; }
   body.wall .wrap { max-width: 1500px; padding-top: 30px; }
   body.wall .top { grid-template-columns: 1fr auto; align-items: center; }
   body.wall h1 { font-size: clamp(40px, 4.2vw, 72px); }
@@ -160,7 +161,7 @@
       <input id="linkedin" type="text" inputmode="url" placeholder="linkedin.com/in/yourname" maxlength="200" autocapitalize="off">
       <label for="instagram">Instagram handle <span class="hint">(optional)</span></label>
       <input id="instagram" type="text" placeholder="@yourhandle" maxlength="40" autocapitalize="off">
-      <div class="tick"><input id="consent" type="checkbox"><label for="consent">I'm happy for WSTI to tag me in its post, and for my name and handle to show on the wall at the event.</label></div>
+      <div class="tick"><input id="consent" type="checkbox"><label for="consent">I'm happy for WSTI to tag me in its post, and for my name to show on the big screen at the event.</label></div>
       <button class="go" id="go" type="submit">Put me on the wall 🚀</button>
       <p class="msg" id="msg" role="status"></p>
     </form>
@@ -172,7 +173,7 @@
     </div>
   </section>
 
-  <section class="card">
+  <section class="card wall-card">
     <div class="wall-head">
       <h2 id="wall-title">On the wall</h2>
       <div class="counter"><b id="count">0</b><span>tagged</span></div>
@@ -181,7 +182,7 @@
     <p class="empty" id="empty"><span class="big">✨</span>Nobody yet. Be the first!</p>
   </section>
 
-  <section class="card">
+  <section class="card robot-card">
     <div class="robot">
       <span class="bot" aria-hidden="true">🤖</span>
       <div>
@@ -229,7 +230,7 @@
   function diameter(n) {
     const a = $('people');
     const d = Math.sqrt((a.clientWidth * a.clientHeight * 0.38) / Math.max(n, 1));
-    return Math.max(wallMode ? 96 : 70, Math.min(wallMode ? 180 : 120, d));
+    return Math.max(wallMode ? 70 : 56, Math.min(wallMode ? 180 : 120, d));
   }
   function sizeBalls() {
     const d = diameter(balls.length);
@@ -331,13 +332,13 @@
       if (seen.has(k)) continue;
       seen.add(k); added++;
       addBall(p, !firstLoad);
-      if (!firstLoad) toast(`👋 ${p.name} just joined the wall!`);
+      if (!firstLoad && wallMode) toast(`👋 ${p.name} just joined the wall!`);
     }
     const before = total;
     total = merged.length;
     $('count').textContent = total;
     $('empty').hidden = total > 0;
-    if (!firstLoad && added) {
+    if (!firstLoad && added && wallMode) {
       $('count').classList.remove('bump'); void $('count').offsetWidth; $('count').classList.add('bump');
       const hitMilestone = Math.floor(total / 5) > Math.floor(before / 5);
       if (hitMilestone) milestone(total); else burst(1);
