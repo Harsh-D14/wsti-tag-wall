@@ -11,6 +11,6 @@ window.TAG_WALL = {
   },
   // The Google Sheet linked to that form, shared "anyone with the link can view".
   // Paste its id here once the form is linked to a sheet.
-  sheetId: "",
+  sheetId: "147gUW8UaOPM9DFTcbdhfYpJGfE1_WDkqP4eZsIBY7UE",
   pollSeconds: 5
 };
