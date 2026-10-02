@@ -117,13 +117,13 @@
   /* Projector view: ?wall */
   .qr { display: none; }
   body.wall .form-card { display: none; }
-  body:not(.wall) .wall-card, body:not(.wall) .robot-card { display: none; }
-  body.wall .wrap { max-width: 1800px; padding-top: 22px; grid-template-columns: minmax(300px, 30%) 1fr; grid-template-areas: "head head" "qr wall" "robot robot" "foot foot"; column-gap: 22px; }
+  body:not(.wall) .wall-card { display: none; }
+  .status { margin: 6px 0 0; color: var(--ink-2); font-weight: 600; }
+  body.wall .wrap { max-width: 1800px; padding-top: 22px; grid-template-columns: minmax(300px, 30%) 1fr; grid-template-areas: "head head" "qr wall" "foot foot"; column-gap: 22px; }
   body.wall .top { display: contents; }
   body.wall header { grid-area: head; }
   body.wall .qr { grid-area: qr; }
   body.wall .wall-card { grid-area: wall; }
-  body.wall .robot-card { grid-area: robot; }
   body.wall footer { grid-area: foot; }
   body.wall h1 { font-size: clamp(36px, 3.6vw, 64px); }
   body.wall .lede { font-size: 21px; }
@@ -133,8 +133,8 @@
   @keyframes glow { 50% { box-shadow: 0 0 0 12px rgba(52,201,142,.15), 0 20px 50px rgba(0,0,0,.35); } }
   body.wall .qr b { font-size: clamp(26px, 2.4vw, 40px); font-weight: 900; display: block; }
   body.wall .qr .hint { font-size: 17px; }
-  body.wall .arena { height: max(420px, calc(100vh - 300px)); }
-  @media (max-width: 900px) { body.wall .wrap { grid-template-columns: 1fr; grid-template-areas: "head" "qr" "wall" "robot" "foot"; } body.wall .qr #qr { max-width: 320px; } }
+  body.wall .arena { height: max(420px, calc(100vh - 330px)); }
+  @media (max-width: 900px) { body.wall .wrap { grid-template-columns: 1fr; grid-template-areas: "head" "qr" "wall" "foot"; } body.wall .qr #qr { max-width: 320px; } }
   body.wall .counter b { font-size: 64px; }
   body.wall .wall-head h2 { font-size: 28px; }
   body.wall .toast { font-size: 24px; }
@@ -175,7 +175,7 @@
     <div class="done" id="done">
       <span class="big">🎉</span>
       <h3>Submitted ✓</h3>
-      <p>You're on the wall. Look up at the big screen 👀</p>
+      <p>We check every entry, then your name lands on the big screen 👀</p>
       <button class="ghost" id="again" type="button">Add someone else</button>
     </div>
   </section>
@@ -183,25 +183,15 @@
   <section class="card wall-card">
     <div class="wall-head">
       <h2 id="wall-title">On the wall</h2>
-      <div class="counter"><b id="count">0</b><span>tagged</span></div>
+      <div class="counter"><b id="count">0</b><span>on the wall</span></div>
     </div>
+    <p class="status" id="status">⏳ Waiting for the robot to publish the checked list</p>
     <div class="arena" id="people"></div>
-    <p class="empty" id="empty"><span class="big">✨</span>Nobody yet. Be the first!</p>
-  </section>
-
-  <section class="card robot-card">
-    <div class="robot">
-      <span class="bot" aria-hidden="true">🤖</span>
-      <div>
-        <h2>The robot's post</h2>
-        <p id="robot-status"><span class="dots">Waiting for the robot to write it</span></p>
-      </div>
-    </div>
-    <div class="post-body" id="post-body"></div>
+    <p class="empty" id="empty"><span class="big">✨</span>Scan the code and drop your details. Names appear here once they have been checked.</p>
   </section>
 
   <footer>
-    This website's code lives on GitHub. A Claude cloud routine keeps the event list fresh from Meetup and writes the post with everyone tagged. A person approves every post before it appears here.
+    This website's code lives on GitHub. A person checks every entry, then a Claude cloud routine publishes the checked names here and keeps the event list fresh from Meetup. Handles are never shown.
     · <a href="https://github.com/Harsh-D14/wsti-tag-wall">See the code</a>
   </footer>
 </div>
@@ -228,7 +218,7 @@
   const hash = (s) => { let h = 7; for (const ch of s) h = (h * 31 + ch.codePointAt(0)) >>> 0; return h; };
   const initials = (n) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => [...w][0].toUpperCase()).join('') || '?';
 
-  let events = [], current = null, seen = new Set(), firstLoad = true, total = 0, lastPost = null;
+  let events = [], current = null, seen = new Set(), firstLoad = true, total = 0;
   let balls = [];
   const ICON_IN = '<svg viewBox="0 0 24 24"><path d="M4.98 3.5A2.5 2.5 0 1 1 5 8.5a2.5 2.5 0 0 1-.02-5zM3 9.75h4V21H3zM9.5 9.75h3.8v1.6h.06c.53-.95 1.83-1.95 3.77-1.95 4.03 0 4.77 2.5 4.77 5.75V21h-4v-5.1c0-1.22-.02-2.78-1.75-2.78-1.75 0-2.02 1.32-2.02 2.69V21h-4z"/></svg>';
   const ICON_IG = '<svg viewBox="0 0 24 24"><path d="M12 7.3A4.7 4.7 0 1 0 12 16.7 4.7 4.7 0 0 0 12 7.3zm0 7.7a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm6-7.9a1.1 1.1 0 1 1-2.2 0 1.1 1.1 0 0 1 2.2 0zM12 2.2c-2.7 0-3 0-4 .06C4.7 2.4 2.4 4.7 2.26 8 2.2 9 2.2 9.3 2.2 12s0 3 .06 4c.14 3.3 2.44 5.6 5.74 5.74 1 .06 1.3.06 4 .06s3 0 4-.06c3.3-.14 5.6-2.44 5.74-5.74.06-1 .06-1.3.06-4s0-3-.06-4C21.6 4.7 19.3 2.4 16 2.26 15 2.2 14.7 2.2 12 2.2z"/></svg>';
@@ -296,11 +286,9 @@
   }
   if (!calm) requestAnimationFrame(tick);
   addEventListener('resize', () => { sizeBalls(); if (calm) layoutStill(); });
-  const pending = [];
 
   const cleanInsta = (v) => { const m = String(v || '').trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/^@/, '').replace(/\/.*$/, ''); return /^[A-Za-z0-9._]{1,30}$/.test(m) ? m : ''; };
   const cleanLinkedin = (v) => { let s = String(v || '').trim(); if (!s) return ''; if (!/^https?:\/\//i.test(s)) s = 'https://' + s; return /^https:\/\/([a-z]{2,3}\.)?linkedin\.com\/(in|company)\/[^\s<>"]+$/i.test(s) ? s : null; };
-  const key = (p) => (p.name + '|' + p.instagram + '|' + p.linkedin).toLowerCase();
 
   function burst(power = 1) {
     if (calm || !window.confetti) return;
@@ -329,122 +317,57 @@
     burst(2);
   }
 
-  function render(list) {
-    const mine = list.filter((p) => p.event === current.id);
-    const merged = [...mine];
-    for (const p of pending) if (p.event === current.id && !mine.some((m) => key(m) === key(p))) merged.push(p);
-    let added = 0;
-    for (const p of merged) {
-      const k = key(p);
-      if (seen.has(k)) continue;
-      seen.add(k); added++;
-      addBall(p, !firstLoad);
-      if (!firstLoad && wallMode) toast(`👋 ${p.name} just joined the wall!`);
-    }
-    const before = total;
-    total = merged.length;
+  const keyOf = (p) => (p.name + '|' + (p.linkedin ? 1 : 0) + (p.instagram ? 1 : 0)).toLowerCase();
+
+  function removeBall(k) {
+    const b = balls.find((x) => x.key === k);
+    if (!b) return;
+    b.el.remove(); balls = balls.filter((x) => x !== b); sizeBalls();
+  }
+
+  function show(people, publishedAt) {
+    const wanted = new Map(people.map((p) => [keyOf(p), p]));
+    for (const k of [...seen]) if (!wanted.has(k)) { seen.delete(k); removeBall(k); }
+    const fresh = [...wanted].filter(([k]) => !seen.has(k)).map(([, p]) => p);
+    const reveal = !firstLoad && seen.size === 0 && fresh.length > 0;
+    fresh.forEach((p, i) => {
+      seen.add(keyOf(p));
+      const drop = () => { addBall(p, !firstLoad); balls[balls.length - 1].key = keyOf(p); };
+      if (reveal) setTimeout(drop, i * 90); else drop();
+      if (!firstLoad && !reveal) toast(`👋 ${p.name} just joined the wall!`);
+    });
+    total = wanted.size;
     $('count').textContent = total;
     $('empty').hidden = total > 0;
-    if (!firstLoad && added && wallMode) {
+    $('status').textContent = publishedAt ? `✅ Checked by a person, published by the robot at ${clock.format(new Date(publishedAt))}` : '⏳ Waiting for the robot to publish the checked list';
+    if (!firstLoad && fresh.length) {
       $('count').classList.remove('bump'); void $('count').offsetWidth; $('count').classList.add('bump');
-      const hitMilestone = Math.floor(total / 5) > Math.floor(before / 5);
-      if (hitMilestone) milestone(total); else burst(1);
+      if (reveal) milestone(total); else burst(1);
     }
     firstLoad = false;
   }
 
-  function parseCSV(text) {
-    const rows = []; let row = [], cell = '', q = false;
-    for (let i = 0; i < text.length; i++) {
-      const c = text[i];
-      if (q) { if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; }
-      else if (c === '"') q = true;
-      else if (c === ',') { row.push(cell); cell = ''; }
-      else if (c === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
-      else if (c !== '\r') cell += c;
-    }
-    if (cell || row.length) { row.push(cell); rows.push(row); }
-    return rows;
-  }
-
-  async function poll() {
-    if (!C.sheetId) { render([]); return; }
+  async function loadWall() {
+    if (!wallMode || !current) return;
     try {
-      const r = await fetch(`https://docs.google.com/spreadsheets/d/${C.sheetId}/gviz/tq?tqx=out:csv&t=${Date.now()}`);
-      const rows = parseCSV(await r.text());
-      const head = (rows.shift() || []).map((h) => h.toLowerCase());
-      const col = (test) => head.findIndex(test);
-      const ci = {
-        event: col((h) => h.startsWith('event')),
-        name: col((h) => h.includes('your name')),
-        linkedin: col((h) => h.includes('linkedin')),
-        instagram: col((h) => h.includes('instagram')),
-        consent: col((h) => h.startsWith('happy')),
-      };
-      const list = rows.map((r) => ({
-        event: String(r[ci.event] || '').split('|')[0].trim(),
-        name: String(r[ci.name] || '').trim().slice(0, 60),
-        linkedin: cleanLinkedin(r[ci.linkedin]) || '',
-        instagram: cleanInsta(r[ci.instagram]),
-        consent: /^yes/i.test(String(r[ci.consent] || '').trim()),
-      })).filter((p) => p.name && p.consent);
-      render(list);
+      const r = await fetch(`wall/${current.id}.json?t=${Date.now()}`, { cache: 'no-store' });
+      if (!r.ok) { show([], null); return; }
+      const data = await r.json();
+      const people = (data.people || []).map((p) => ({ name: String(p.name || '').trim().slice(0, 60), linkedin: !!p.linkedin, instagram: !!p.instagram })).filter((p) => p.name);
+      show(people, data.publishedAt || null);
     } catch (e) { /* try again on the next tick */ }
   }
-
-  function sections(md) {
-    const out = []; let cur = null;
-    for (const line of md.split('\n')) {
-      const m = line.match(/^##\s+(.*)/);
-      if (m) { cur = { title: m[1].trim(), body: [] }; out.push(cur); }
-      else if (cur) cur.body.push(line);
-    }
-    return out.map((s) => ({ title: s.title, body: s.body.join('\n').trim() })).filter((s) => s.body);
-  }
-
-  async function typeInto(el, text) {
-    if (calm) { el.textContent = text; return; }
-    const caret = document.createElement('span'); caret.className = 'caret';
-    el.textContent = ''; el.appendChild(caret);
-    const step = Math.max(1, Math.round(text.length / 450));
-    for (let i = 0; i < text.length; i += step) {
-      caret.before(text.slice(i, i + step));
-      await new Promise((r) => setTimeout(r, 14));
-    }
-    caret.remove();
-  }
-
-  async function loadPost() {
-    try {
-      const r = await fetch(`posts/${current.id}.md?t=${Date.now()}`, { cache: 'no-store' });
-      if (!r.ok) { if (lastPost !== null) { lastPost = null; $('post-body').className = 'post-body'; $('robot-status').innerHTML = '<span class="dots">Waiting for the robot to write it</span>'; } return; }
-      const text = await r.text();
-      if (text === lastPost) return;
-      const fresh = lastPost === null && !firstPostLoad;
-      lastPost = text;
-      const secs = sections(text).filter((s) => !/^people to tag/i.test(s.title)).map((s) => ({ title: s.title, body: s.body.split('\n').filter((l) => !/^\s*@/.test(l) && !/linkedin\.com|instagram\.com/i.test(l)).join('\n').trim() }));
-      const body = $('post-body');
-      body.innerHTML = secs.map((s, i) => `<div class="post-sec"><h3>${esc(s.title)}</h3><div class="t" id="sec-${i}"></div></div>`).join('');
-      body.className = 'post-body on';
-      $('robot-status').textContent = 'Written by Claude, approved by a person before it appeared here.';
-      if (fresh) { burst(2); toast('🤖 The robot just wrote the post!'); }
-      for (let i = 0; i < secs.length; i++) {
-        if (fresh) await typeInto($(`sec-${i}`), secs[i].body); else $(`sec-${i}`).textContent = secs[i].body;
-      }
-    } catch (e) { /* try again later */ } finally { firstPostLoad = false; }
-  }
-  let firstPostLoad = true;
 
   function choose(id) {
     current = events.find((e) => e.id === id) || events[0];
     $('event').value = current.id;
-    $('wall-title').textContent = `On the wall · ${current.title}`;
-    if (wallMode) { $('title').innerHTML = `${esc(current.title)} <span class="wave">👋</span>`; $('lede').textContent = 'Scan the code, drop your LinkedIn or Instagram, and watch your name land here.'; }
-    $('people').innerHTML = ''; balls = []; seen = new Set(); firstLoad = true; total = 0; lastPost = null; firstPostLoad = true;
-    $('post-body').className = 'post-body';
+    const short = current.title.split(':')[0].trim();
+    $('wall-title').textContent = `On the wall · ${short}`;
+    if (wallMode) { $('title').innerHTML = `${esc(short)} <span class="wave">👋</span>`; $('lede').textContent = 'Scan the code and drop your LinkedIn or Instagram. Once the list is checked, the robot puts everyone on the wall.'; }
+    $('people').innerHTML = ''; balls = []; seen = new Set(); firstLoad = true; total = 0;
     const u = new URL(location.href); u.search = ''; u.searchParams.set('event', current.id);
     if (wallMode && window.QRCode) { $('qr').innerHTML = ''; new QRCode($('qr'), { text: u.toString(), width: 512, height: 512, correctLevel: QRCode.CorrectLevel.M }); $('qr-url').textContent = u.host + u.pathname; }
-    poll(); loadPost();
+    loadWall();
   }
 
   $('f').addEventListener('submit', async (e) => {
@@ -467,8 +390,6 @@
     body.set(C.fields.consent, 'Yes');
     try {
       await fetch(C.formAction, { method: 'POST', mode: 'no-cors', body });
-      pending.push({ event: current.id, name, linkedin: li || '', instagram: ig, consent: true });
-      render([]);
       $('form-card').classList.add('is-done');
       burst(2);
       $('f').reset(); $('event').value = current.id;
@@ -488,8 +409,7 @@
     const today = sydDate(new Date());
     const next = events.find((e) => sydDate(new Date(e.start)) >= today);
     choose(params.get('event') || (next || events[0]).id);
-    setInterval(poll, (C.pollSeconds || 5) * 1000);
-    setInterval(loadPost, 15000);
+    setInterval(loadWall, 8000);
   });
 })();
 </script>

@@ -1,4 +1,5 @@
-// Where the tag wall sends and reads names. Change these, nothing else.
+// Where the phone form sends answers. The website never reads them back:
+// the routine publishes the checked names to wall/<event id>.json.
 window.TAG_WALL = {
   // The Google Form the website posts into (WSTI Tag Wall).
   formAction: "https://docs.google.com/forms/d/e/1FAIpQLSfojUpyTSbbdN-fJJJQPr5xGIRmid5q_Xd9J_p2ZPxQJVFIyg/formResponse",
@@ -8,9 +9,5 @@ window.TAG_WALL = {
     linkedin: "entry.1941138217",
     instagram: "entry.1897527219",
     consent: "entry.608546854"
-  },
-  // The Google Sheet linked to that form, shared "anyone with the link can view".
-  // Paste its id here once the form is linked to a sheet.
-  sheetId: "147gUW8UaOPM9DFTcbdhfYpJGfE1_WDkqP4eZsIBY7UE",
-  pollSeconds: 5
+  }
 };
