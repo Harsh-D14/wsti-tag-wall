@@ -62,16 +62,18 @@
   .counter b.bump { animation: bump .5s ease-out; }
   @keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.5); } 100% { transform: scale(1); } }
   .counter span { color: var(--ink-2); font-weight: 600; }
-  .people { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; margin-top: 16px; }
-  .person { display: flex; gap: 12px; align-items: center; background: rgba(255,255,255,.07); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; animation: pop .7s cubic-bezier(.2,1.6,.4,1); position: relative; }
-  .person.new { box-shadow: 0 0 0 2px var(--sun), 0 0 30px rgba(255,200,87,.5); }
-  .avatar { width: 46px; height: 46px; border-radius: 50%; flex: none; display: grid; place-items: center; font-weight: 900; font-size: 17px; color: #0E2238; position: relative; }
-  .avatar .emo { position: absolute; right: -6px; bottom: -6px; font-size: 18px; filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
-  .person .n { font-weight: 800; overflow-wrap: anywhere; }
-  .person .h { font-size: 13px; display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
-  .person a { color: var(--ink-2); text-decoration: none; }
-  .person a:hover { color: var(--mint); }
-  .person.hidden { display: none; }
+  .arena { position: relative; height: 440px; margin-top: 14px; border-radius: 16px; background: rgba(0,0,0,.18); border: 1px solid var(--line); overflow: hidden; }
+  .ball { position: absolute; left: 0; top: 0; will-change: transform; }
+  .ball .in { width: 100%; height: 100%; border-radius: 50%; display: grid; place-items: center; align-content: center; gap: 2px; text-align: center; color: #0E2238; padding: 10%; box-shadow: inset -8px -10px 18px rgba(0,0,0,.18), inset 8px 8px 16px rgba(255,255,255,.35), 0 10px 24px rgba(0,0,0,.3); animation: pop .7s cubic-bezier(.2,1.6,.4,1); }
+  .ball.new .in { box-shadow: 0 0 0 4px var(--sun), 0 0 40px rgba(255,200,87,.8), inset -8px -10px 18px rgba(0,0,0,.18); }
+  .ball .ini { font-weight: 900; line-height: 1; }
+  .ball .nm { font-weight: 800; line-height: 1.1; max-width: 100%; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+  .ball .ics { display: flex; gap: 4px; justify-content: center; margin-top: 2px; }
+  .ic { position: relative; display: inline-grid; place-items: center; border-radius: 6px; background: #0E2238; }
+  .ic svg { width: 62%; height: 62%; fill: #fff; }
+  .ic .ok { position: absolute; right: -35%; bottom: -35%; width: 62%; height: 62%; border-radius: 50%; background: var(--mint); border: 2px solid #fff; display: grid; place-items: center; }
+  .ic .ok svg { width: 70%; height: 70%; fill: none; stroke: #0E2238; stroke-width: 4; }
+  body.wall .ball { cursor: pointer; }
   .empty { color: var(--ink-2); font-size: 16px; margin: 16px 0 4px; text-align: center; }
   .empty .big { font-size: 40px; display: block; animation: float 3s ease-in-out infinite; }
   @keyframes float { 50% { transform: translateY(-8px); } }
@@ -123,9 +125,7 @@
   body.wall .qr #qr { background: #fff; padding: 10px; border-radius: 12px; }
   body.wall .qr b { font-size: 22px; font-weight: 900; display: block; }
   body.wall .qr .hint { font-size: 15px; }
-  body.wall .people { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
-  body.wall .person { font-size: 21px; padding: 14px 16px; cursor: pointer; }
-  body.wall .avatar { width: 58px; height: 58px; font-size: 21px; }
+  body.wall .arena { height: max(420px, calc(100vh - 410px)); }
   body.wall .counter b { font-size: 64px; }
   body.wall .wall-head h2 { font-size: 28px; }
   body.wall .toast { font-size: 24px; }
@@ -134,7 +134,7 @@
   @media (max-width: 720px) { body.wall .top { grid-template-columns: 1fr; } }
 
   @media (prefers-reduced-motion: reduce) {
-    .blob, .person, .toast, .badge .live, h1 .wave, .empty .big, .robot .bot, .done .big, .counter b.bump, .milestone div { animation: none !important; }
+    .blob, .ball .in, .toast, .badge .live, h1 .wave, .empty .big, .robot .bot, .done .big, .counter b.bump, .milestone div { animation: none !important; }
   }
 </style>
 </head>
@@ -166,8 +166,8 @@
     </form>
     <div class="done" id="done">
       <span class="big">🎉</span>
-      <h3>You're on the wall!</h3>
-      <p>Look up at the big screen 👀</p>
+      <h3>Submitted ✓</h3>
+      <p>You're on the wall. Look up at the big screen 👀</p>
       <button class="ghost" id="again" type="button">Add someone else</button>
     </div>
   </section>
@@ -177,7 +177,7 @@
       <h2 id="wall-title">On the wall</h2>
       <div class="counter"><b id="count">0</b><span>tagged</span></div>
     </div>
-    <div class="people" id="people"></div>
+    <div class="arena" id="people"></div>
     <p class="empty" id="empty"><span class="big">✨</span>Nobody yet. Be the first!</p>
   </section>
 
@@ -193,7 +193,7 @@
   </section>
 
   <footer>
-    This website's code lives on GitHub. A Claude cloud routine keeps the event list fresh from Meetup and writes the post with everyone tagged. A person decides what goes on social media.
+    This website's code lives on GitHub. A Claude cloud routine keeps the event list fresh from Meetup and writes the post with everyone tagged. A person approves every post before it appears here.
     · <a href="https://github.com/Harsh-D14/wsti-tag-wall">See the code</a>
   </footer>
 </div>
@@ -221,6 +221,73 @@
   const initials = (n) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => [...w][0].toUpperCase()).join('') || '?';
 
   let events = [], current = null, seen = new Set(), firstLoad = true, total = 0, lastPost = null;
+  let balls = [];
+  const ICON_IN = '<svg viewBox="0 0 24 24"><path d="M4.98 3.5A2.5 2.5 0 1 1 5 8.5a2.5 2.5 0 0 1-.02-5zM3 9.75h4V21H3zM9.5 9.75h3.8v1.6h.06c.53-.95 1.83-1.95 3.77-1.95 4.03 0 4.77 2.5 4.77 5.75V21h-4v-5.1c0-1.22-.02-2.78-1.75-2.78-1.75 0-2.02 1.32-2.02 2.69V21h-4z"/></svg>';
+  const ICON_IG = '<svg viewBox="0 0 24 24"><path d="M12 7.3A4.7 4.7 0 1 0 12 16.7 4.7 4.7 0 0 0 12 7.3zm0 7.7a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm6-7.9a1.1 1.1 0 1 1-2.2 0 1.1 1.1 0 0 1 2.2 0zM12 2.2c-2.7 0-3 0-4 .06C4.7 2.4 2.4 4.7 2.26 8 2.2 9 2.2 9.3 2.2 12s0 3 .06 4c.14 3.3 2.44 5.6 5.74 5.74 1 .06 1.3.06 4 .06s3 0 4-.06c3.3-.14 5.6-2.44 5.74-5.74.06-1 .06-1.3.06-4s0-3-.06-4C21.6 4.7 19.3 2.4 16 2.26 15 2.2 14.7 2.2 12 2.2z"/></svg>';
+  const TICK = '<span class="ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>';
+
+  function diameter(n) {
+    const a = $('people');
+    const d = Math.sqrt((a.clientWidth * a.clientHeight * 0.38) / Math.max(n, 1));
+    return Math.max(wallMode ? 96 : 70, Math.min(wallMode ? 180 : 120, d));
+  }
+  function sizeBalls() {
+    const d = diameter(balls.length);
+    for (const b of balls) {
+      b.r = d / 2;
+      b.el.style.width = b.el.style.height = d + 'px';
+      b.el.querySelector('.ini').style.fontSize = (d * 0.26) + 'px';
+      b.el.querySelector('.nm').style.fontSize = Math.max(10, d * 0.1) + 'px';
+      for (const ic of b.el.querySelectorAll('.ic')) { ic.style.width = ic.style.height = Math.max(14, d * 0.15) + 'px'; }
+    }
+  }
+  function addBall(p, isNew) {
+    const a = $('people');
+    const h = hash(p.name.toLowerCase());
+    const el = document.createElement('div');
+    el.className = 'ball' + (isNew ? ' new' : '');
+    const ics = (p.linkedin ? `<span class="ic" title="LinkedIn received">${ICON_IN}${TICK}</span>` : '') + (p.instagram ? `<span class="ic" title="Instagram received">${ICON_IG}${TICK}</span>` : '');
+    el.innerHTML = `<div class="in" style="background:radial-gradient(circle at 32% 28%, #fff8 0, ${COLOURS[h % COLOURS.length]} 45%)"><div class="ini">${esc(initials(p.name))}</div><div class="nm">${esc(p.name)}</div><div class="ics">${ics}</div></div>`;
+    a.appendChild(el);
+    const speed = (wallMode ? 70 : 45) + Math.random() * 50, ang = Math.random() * Math.PI * 2;
+    const b = { el, x: 0, y: 0, r: 40, vx: Math.cos(ang) * speed, vy: Math.sin(ang) * speed };
+    balls.push(b);
+    sizeBalls();
+    b.x = isNew ? a.clientWidth / 2 : b.r + Math.random() * Math.max(1, a.clientWidth - 2 * b.r);
+    b.y = isNew ? b.r : b.r + Math.random() * Math.max(1, a.clientHeight - 2 * b.r);
+    if (isNew) { b.vy = Math.abs(b.vy) + 60; setTimeout(() => el.classList.remove('new'), 4000); }
+    if (wallMode) el.addEventListener('click', () => { el.remove(); balls = balls.filter((x) => x !== b); sizeBalls(); });
+    if (calm) layoutStill();
+  }
+  function layoutStill() {
+    const a = $('people'), d = balls.length ? balls[0].r * 2 : 0, per = Math.max(1, Math.floor(a.clientWidth / (d + 10)));
+    balls.forEach((b, i) => { b.x = 10 + (i % per) * (d + 10) + b.r; b.y = 10 + Math.floor(i / per) * (d + 10) + b.r; b.el.style.transform = `translate(${b.x - b.r}px, ${b.y - b.r}px)`; });
+  }
+  let lastT = 0;
+  function tick(t) {
+    const dt = Math.min(0.05, (t - lastT) / 1000 || 0); lastT = t;
+    const a = $('people'), W = a.clientWidth, H = a.clientHeight;
+    for (const b of balls) {
+      b.x += b.vx * dt; b.y += b.vy * dt;
+      if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx); }
+      if (b.x > W - b.r) { b.x = W - b.r; b.vx = -Math.abs(b.vx); }
+      if (b.y < b.r) { b.y = b.r; b.vy = Math.abs(b.vy); }
+      if (b.y > H - b.r) { b.y = H - b.r; b.vy = -Math.abs(b.vy); }
+    }
+    for (let i = 0; i < balls.length; i++) for (let j = i + 1; j < balls.length; j++) {
+      const p = balls[i], q = balls[j], dx = q.x - p.x, dy = q.y - p.y, dist = Math.hypot(dx, dy), min = p.r + q.r;
+      if (dist > 0 && dist < min) {
+        const nx = dx / dist, ny = dy / dist, push = (min - dist) / 2;
+        p.x -= nx * push; p.y -= ny * push; q.x += nx * push; q.y += ny * push;
+        const rel = (q.vx - p.vx) * nx + (q.vy - p.vy) * ny;
+        if (rel < 0) { p.vx += rel * nx; p.vy += rel * ny; q.vx -= rel * nx; q.vy -= rel * ny; }
+      }
+    }
+    for (const b of balls) b.el.style.transform = `translate(${b.x - b.r}px, ${b.y - b.r}px)`;
+    requestAnimationFrame(tick);
+  }
+  if (!calm) requestAnimationFrame(tick);
+  addEventListener('resize', () => { sizeBalls(); if (calm) layoutStill(); });
   const pending = [];
 
   const cleanInsta = (v) => { const m = String(v || '').trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/^@/, '').replace(/\/.*$/, ''); return /^[A-Za-z0-9._]{1,30}$/.test(m) ? m : ''; };
@@ -258,23 +325,13 @@
     const mine = list.filter((p) => p.event === current.id);
     const merged = [...mine];
     for (const p of pending) if (p.event === current.id && !mine.some((m) => key(m) === key(p))) merged.push(p);
-    const box = $('people');
     let added = 0;
     for (const p of merged) {
       const k = key(p);
       if (seen.has(k)) continue;
       seen.add(k); added++;
-      const h = hash(p.name.toLowerCase());
-      const el = document.createElement('div');
-      el.className = 'person' + (firstLoad ? '' : ' new');
-      const handles = [];
-      if (p.instagram) handles.push(`<a href="https://instagram.com/${esc(p.instagram)}" target="_blank" rel="noopener">@${esc(p.instagram)}</a>`);
-      if (p.linkedin) handles.push(`<a href="${esc(p.linkedin)}" target="_blank" rel="noopener">in LinkedIn</a>`);
-      el.innerHTML = `<div class="avatar" style="background:${COLOURS[h % COLOURS.length]}">${esc(initials(p.name))}<span class="emo">${EMOJI[(h >>> 3) % EMOJI.length]}</span></div><div><div class="n">${esc(p.name)}</div><div class="h">${handles.join('')}</div></div>`;
-      if (wallMode) el.title = 'Click to hide on this screen';
-      el.addEventListener('click', (e) => { if (wallMode && e.target.tagName !== 'A') el.classList.add('hidden'); });
-      box.prepend(el);
-      if (!firstLoad) { setTimeout(() => el.classList.remove('new'), 4000); toast(`👋 ${p.name} just joined the wall!`); }
+      addBall(p, !firstLoad);
+      if (!firstLoad) toast(`👋 ${p.name} just joined the wall!`);
     }
     const before = total;
     total = merged.length;
@@ -357,11 +414,11 @@
       if (text === lastPost) return;
       const fresh = lastPost === null && !firstPostLoad;
       lastPost = text;
-      const secs = sections(text).filter((s) => !/^people to tag/i.test(s.title));
+      const secs = sections(text).filter((s) => !/^people to tag/i.test(s.title)).map((s) => ({ title: s.title, body: s.body.split('\n').filter((l) => !/^\s*@/.test(l) && !/linkedin\.com|instagram\.com/i.test(l)).join('\n').trim() }));
       const body = $('post-body');
       body.innerHTML = secs.map((s, i) => `<div class="post-sec"><h3>${esc(s.title)}</h3><div class="t" id="sec-${i}"></div></div>`).join('');
       body.className = 'post-body on';
-      $('robot-status').textContent = `Written by Claude at ${clock.format(new Date())}. A person decides what gets posted.`;
+      $('robot-status').textContent = 'Written by Claude, approved by a person before it appeared here.';
       if (fresh) { burst(2); toast('🤖 The robot just wrote the post!'); }
       for (let i = 0; i < secs.length; i++) {
         if (fresh) await typeInto($(`sec-${i}`), secs[i].body); else $(`sec-${i}`).textContent = secs[i].body;
@@ -375,7 +432,7 @@
     $('event').value = current.id;
     $('wall-title').textContent = `On the wall · ${current.title}`;
     if (wallMode) { $('title').innerHTML = `${esc(current.title)} <span class="wave">👋</span>`; $('lede').textContent = 'Scan the code, drop your LinkedIn or Instagram, and watch your name land here.'; }
-    $('people').innerHTML = ''; seen = new Set(); firstLoad = true; total = 0; lastPost = null; firstPostLoad = true;
+    $('people').innerHTML = ''; balls = []; seen = new Set(); firstLoad = true; total = 0; lastPost = null; firstPostLoad = true;
     $('post-body').className = 'post-body';
     const u = new URL(location.href); u.search = ''; u.searchParams.set('event', current.id);
     if (wallMode && window.QRCode) { $('qr').innerHTML = ''; new QRCode($('qr'), { text: u.toString(), width: 190, height: 190 }); $('qr-url').textContent = u.host + u.pathname; }
